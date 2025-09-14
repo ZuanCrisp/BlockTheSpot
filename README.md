@@ -30,24 +30,24 @@
 :warning: This mod is for the [**Desktop Application**](https://www.spotify.com/download/windows/) of Spotify on Windows only and **not the Microsoft Store version**.
 
 ### Installation/Update:
-* Just download and run [BlockTheSpot.bat](https://raw.githack.com/mrpond/BlockTheSpot/master/BlockTheSpot.bat)
+* Just download and run [BlockTheSpot.bat](https://raw.githack.com/ZuanCrisp/BlockTheSpot/master/BlockTheSpot.bat)
 
 or
 
 #### Fully automated installation via PowerShell
 
 ```powershell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-Expression "& { $(Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/mrpond/BlockTheSpot/master/install.ps1') } -UninstallSpotifyStoreEdition -UpdateSpotify"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-Expression "& { $(Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/ZuanCrisp/BlockTheSpot/master/install.ps1') } -UninstallSpotifyStoreEdition -UpdateSpotify"
 ```
 
 #### Manual installation/update
 
 1. Browse to your Spotify installation folder `%APPDATA%\Spotify`
-2. Download `chrome_elf.zip` from [releases](https://github.com/mrpond/BlockTheSpot/releases)
+2. Download `chrome_elf.zip` from [releases](https://github.com/ZuanCrisp/BlockTheSpot/releases)
 3. Unzip `dpapi.dll` and `config.ini` to Spotify directory. 
-4. Download latest [blockthespot_settings.json](https://github.com/mrpond/BlockTheSpot/blob/master/blockthespot_settings.json) from github to Spotify directory. 
+4. Download latest [blockthespot_settings.json](https://github.com/ZuanCrisp/BlockTheSpot/blob/master/blockthespot_settings.json) from github to Spotify directory. 
 ### Uninstall:
-* Just run [uninstall.bat](https://raw.githack.com/mrpond/BlockTheSpot/master/uninstall.bat)
+* Just run [uninstall.bat](https://raw.githack.com/ZuanCrisp/BlockTheSpot/master/uninstall.bat)
 or
 * Remove `dpapi.dll` and `config.ini` from Spotify directory.
 or
@@ -55,7 +55,7 @@ or
 
 #### BlockTheSpot with Spicetify Installation/Update:
 
-* Just download and run [BlockTheSpot + Spicetify.bat](https://raw.githack.com/mrpond/BlockTheSpot/master/BlockTheSpot%20%2B%20Spicetify.bat) then answer the prompts when given
+* Just download and run [BlockTheSpot + Spicetify.bat](https://raw.githack.com/ZuanCrisp/BlockTheSpot/master/BlockTheSpot%20%2B%20Spicetify.bat) then answer the prompts when given
 
 ### BlockTheSpot with Spicetify Uninstall:
 
