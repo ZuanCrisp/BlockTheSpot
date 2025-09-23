@@ -105,7 +105,7 @@ function Test-SpotifyVersion
 Write-Host @'
 **********************************
 Authors: @Nuzair46, @KUTlime
-Clone by : ZuanCrisp 🤓☝🏻
+Clone by : @ZuanCrisp
 **********************************
 '@
 
@@ -294,6 +294,7 @@ Write-Host 'Patching Complete, starting Spotify...'
 
 Start-Process -WorkingDirectory $spotifyDirectory -FilePath $spotifyExecutable
 Write-Host 'Done.'
+
 
 
 
