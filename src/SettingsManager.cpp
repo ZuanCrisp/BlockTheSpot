@@ -419,7 +419,7 @@ void SettingsManager::SyncConfigFile()
     std::wstring ini_path = L".\\config.ini";
     m_config = {
         {L"Block_Ads", true},
-        {L"Block_Banner", true},
+        {L"Block_Banner", false},
         {L"Enable_Developer", true},
         {L"Enable_Log", false},
         {L"Enable_Auto_Update", true},

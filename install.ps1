@@ -261,6 +261,19 @@ catch
 Expand-Archive -Force -LiteralPath "$elfPath" -DestinationPath $PWD
 Remove-Item -LiteralPath "$elfPath" -Force
 
+# The banner hook can leave newer Spotify clients with a blank window.
+$configPath = Join-Path -Path $PWD -ChildPath 'config.ini'
+$configContent = [System.IO.File]::ReadAllText($configPath)
+if ($configContent -match '(?m)^Block_Banner\s*=')
+{
+  $configContent = [System.Text.RegularExpressions.Regex]::Replace($configContent, '(?m)^Block_Banner\s*=.*$', 'Block_Banner=0')
+  [System.IO.File]::WriteAllText($configPath, $configContent, [System.Text.Encoding]::ASCII)
+}
+else
+{
+  throw 'The downloaded config.ini does not contain Block_Banner; refusing to install with an unknown banner-hook setting.'
+}
+
 Write-Host 'Patching Spotify...'
 $patchFiles = (Join-Path -Path $PWD -ChildPath 'dpapi.dll'), (Join-Path -Path $PWD -ChildPath 'config.ini')
 

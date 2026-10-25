@@ -18,6 +18,10 @@
 * Unlocks most premium features except downloads and "Your DJ"
 * Lives through Spotify updates. No need to patch Spotify after every update anymore.
 
+### Troubleshooting a blank or black window
+
+The banner hook can conflict with some Spotify client versions and leave the app window blank. The installer disables this hook by default. If Spotify is already patched, close Spotify and set `Block_Banner=0` under `[Config]` in `%APPDATA%\Spotify\config.ini`, then reopen Spotify. This leaves the banner hook off while the other configured features remain available.
+
 #### Experimental features from developer mode
 - Click on the 2 dots in the top left corner of Spotify > Develop > Show debug window. Play around with the options.
 - Enable/disable feature by yourself in realtime and on demand.
