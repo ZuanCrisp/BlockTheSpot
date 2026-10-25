@@ -34,7 +34,7 @@ For a remote PowerShell launch, the script downloads this repository's source
 from GitHub, builds the CLI, then runs it:
 
 ```powershell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-Expression "& { $(Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/ZuanCrisp/BlockTheSpot/master/install.ps1') }"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $url = 'https://raw.githubusercontent.com/ZuanCrisp/BlockTheSpot/master/install.ps1?cache=' + [DateTimeOffset]::UtcNow.ToUnixTimeSeconds(); Invoke-Expression (Invoke-WebRequest -UseBasicParsing $url).Content
 ```
 
 The CLI asks before replacing Spotify with a selected compatible version or
