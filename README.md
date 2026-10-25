@@ -1,75 +1,58 @@
-<center>
-    <h1 align="center">BlockTheSpot</h1>
-    <h4 align="center">A multi-purpose adblocker and skip-bypass for the <strong>Spotify for Windows (64 bit)</strong> </h4>
-    <h5 align="center">Please support Spotify by purchasing premium</h5>
-    <p align="center">
-        <strong>Last updated:</strong> 11 September 2025<br>
-        <strong>Last tested version:</strong> Spotify for Windows (64 bit) 1.2.72.438.g8c88c31c
-    </p> 
-</center>
+# BlockTheSpot CLI
 
-### Virus warning on windows defender issue:
-* the code is on Github, everyone can check it.
-* BTS utilize Appveyor, https://www.appveyor.com/.
-* Any code change on Github, Appveyor will build it and make release on Github.
-* false positive can happen. but don't trust me on this, try verify by compile your own BTS and compare with the release.
+Windows x64 console installer. It reads the latest BlockTheSpot release from
+[Nuzair46/BlockTheSpot](https://github.com/Nuzair46/BlockTheSpot) and filters the
+Spotify version list from [Loadspot](https://loadspot.pages.dev/versions.json)
+to versions compatible with that release. It skips unsupported versions rather
+than patching them blindly.
 
-### Features:
-* Unlocks most premium features except downloads and "Your DJ"
-* Lives through Spotify updates. No need to patch Spotify after every update anymore.
+## Run from PowerShell
 
-### Troubleshooting a blank or black window
-
-The banner hook can conflict with some Spotify client versions and leave the app window blank. The installer disables this hook by default. If Spotify is already patched, close Spotify and set `Block_Banner=0` under `[Config]` in `%APPDATA%\Spotify\config.ini`, then reopen Spotify. This leaves the banner hook off while the other configured features remain available.
-
-#### Experimental features from developer mode
-- Click on the 2 dots in the top left corner of Spotify > Develop > Show debug window. Play around with the options.
-- Enable/disable feature by yourself in realtime and on demand.
-- Choose old/new theme(YLX).
-- Enable right sidebar.
-- Hide upgrade button on top bar.
-
-:warning: This mod is for the [**Desktop Application**](https://www.spotify.com/download/windows/) of Spotify on Windows only and **not the Microsoft Store version**.
-
-### Installation/Update:
-* Just download and run [BlockTheSpot.bat](https://raw.githack.com/ZuanCrisp/BlockTheSpot/master/BlockTheSpot.bat)
-
-or
-
-#### Fully automated installation via PowerShell
+From a local clone or downloaded source folder:
 
 ```powershell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-Expression "& { $(Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/ZuanCrisp/BlockTheSpot/master/install.ps1') } -UninstallSpotifyStoreEdition -UpdateSpotify"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-#### Manual installation/update
+The first run builds a console program from `installer-cli` source. If Go is not
+installed, the build script downloads a pinned Go toolchain to the temp folder,
+checks its SHA-256, and does not install it system-wide. The installer then shows
+the compatible Spotify version choices in the terminal.
 
-1. Browse to your Spotify installation folder `%APPDATA%\Spotify`
-2. Download `chrome_elf.zip` from [releases](https://github.com/ZuanCrisp/BlockTheSpot/releases)
-3. Unzip `dpapi.dll` and `config.ini` to Spotify directory. 
-4. Download latest [blockthespot_settings.json](https://github.com/ZuanCrisp/BlockTheSpot/blob/master/blockthespot_settings.json) from github to Spotify directory. 
-### Uninstall:
-* Just run [uninstall.bat](https://raw.githack.com/ZuanCrisp/BlockTheSpot/master/uninstall.bat)
-or
-* Remove `dpapi.dll` and `config.ini` from Spotify directory.
-or
-* Reinstall Spotify
+To restore Spotify, run:
 
-### Disabling Automatic Updates
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Restore
+```
 
-The automatic update feature is enabled by default. To disable it:
+The batch launchers call the same CLI:
 
-1. Navigate to the directory where Spotify is installed: `%APPDATA%\Spotify`.
-2. Open the `config.ini` file.
-3. Set `Enable_Auto_Update` to `0` under the `[Config]` section.
-4. Save your changes and close the file.
+- `BlockTheSpot.bat` opens the install/update menu.
+- `uninstall.bat` opens the restore action directly.
 
-Automatic updates will now be disabled. If you wish to update, you'll need to do so manually.
+For a remote PowerShell launch, the script downloads this repository's source
+from GitHub, builds the CLI, then runs it:
 
-### Additional Notes:
+```powershell
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-Expression "& { $(Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/ZuanCrisp/BlockTheSpot/master/install.ps1') }"
+```
 
-* Installation script automatically detects if your Spotify client version is supported, or not. If the version is not supported, you will be prompted to update your Spotify client. To enforce client update, supply an optional parameter `UpdateSpotify` to the installation script.
+The CLI asks before replacing Spotify with a selected compatible version or
+removing a Microsoft Store edition. The selection is based on the patch release's
+compatibility metadata, so it can offer an older Spotify build when the newest
+one is unsupported. Keep using this CLI for updates; the old installer that
+always downloaded Spotify's latest setup has been removed.
 
+## Build manually
 
+```powershell
+cd installer-cli
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
+.\BlockTheSpotInstallerCLI.exe
+```
 
-
+The CLI source adapts the installer flow from
+[Nuzair46/BlockTheSpot-Installer](https://github.com/Nuzair46/BlockTheSpot-Installer)
+under its MIT license. The web version list, release asset checks, version
+compatibility checks, file backup and restore, and diagnostic reporting are kept
+in the CLI implementation.
