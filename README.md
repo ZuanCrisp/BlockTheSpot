@@ -51,20 +51,6 @@ or
 or
 * Reinstall Spotify
 
-#### BlockTheSpot with Spicetify Installation/Update:
-
-* Just download and run [BlockTheSpot + Spicetify.bat](https://raw.githack.com/ZuanCrisp/BlockTheSpot/master/BlockTheSpot%20%2B%20Spicetify.bat) then answer the prompts when given
-
-### BlockTheSpot with Spicetify Uninstall:
-
-```powershell
-spicetify restore
-rmdir -r -fo $env:APPDATA\spicetify
-rmdir -r -fo $env:LOCALAPPDATA\spicetify
-rm -fo $env:APPDATA\spotify\dpapi.dll
-rm -fo $env:APPDATA\spotify\config.ini
-```
-
 ### Disabling Automatic Updates
 
 The automatic update feature is enabled by default. To disable it:
@@ -78,10 +64,7 @@ Automatic updates will now be disabled. If you wish to update, you'll need to do
 
 ### Additional Notes:
 
-* Installation script automatically detects if your Spotify client version is supported, or not. If the version is not supported, you will be prompted to update your Spotify client. To enforce client update, supply an optional parameter `UpdateSpotify` to the installation script. 
-* [Spicetify](https://github.com/khanhas/spicetify-cli) users will need to reapply BlockTheSpot after applying a Spicetify themes/patches.
-* If the automatic install/uninstall scripts do not work, please contact [Nuzair46](https://github.com/Nuzair46).
-
+* Installation script automatically detects if your Spotify client version is supported, or not. If the version is not supported, you will be prompted to update your Spotify client. To enforce client update, supply an optional parameter `UpdateSpotify` to the installation script.
 
 
 
