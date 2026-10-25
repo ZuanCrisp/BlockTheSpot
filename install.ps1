@@ -44,7 +44,10 @@ $buildScript = Join-Path $repoRoot 'installer-cli\build.ps1'
 $exitCode = 1
 try {
   if (-not (Test-Path -LiteralPath $cliPath)) {
-    & $buildScript
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File $buildScript
+    if ($LASTEXITCODE -ne 0) {
+      throw "CLI build failed with exit code $LASTEXITCODE."
+    }
     if (-not (Test-Path -LiteralPath $cliPath)) {
       throw 'The CLI build did not produce BlockTheSpotInstallerCLI.exe.'
     }
