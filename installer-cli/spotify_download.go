@@ -22,13 +22,14 @@ type downloadLogger func(string, ...any)
 
 type installerDownloadMethod struct {
 	name string
-	run  func(address, destination string, logf downloadLogger) error
+	run  func(address, destination string, expectedSize int64, logf downloadLogger) error
 }
 
 // Only transfer and payload failures are retried. Local file errors stop immediately.
 type installerDownloadError struct {
 	status     int
 	retryAfter string
+	permanent  bool
 	err        error
 }
 
@@ -73,6 +74,9 @@ func downloadSpotifyInstaller(address, target string, expectedSize int64, method
 			if !errors.As(lastErr, &failure) {
 				return fmt.Errorf("%s download for %s: %w", method.name, address, lastErr)
 			}
+			if failure.permanent {
+				break
+			}
 			delay := installerRetryDelay(failure.retryAfter, time.Now())
 			if delay > 30*time.Second {
 				return fmt.Errorf("download from %s: %w; server requested Retry-After %q; try again later", address, lastErr, failure.retryAfter)
@@ -81,6 +85,9 @@ func downloadSpotifyInstaller(address, target string, expectedSize int64, method
 				logf("Retrying in %s.", delay)
 				sleep(delay)
 			}
+		}
+		if failure.permanent {
+			break
 		}
 		if failure.status == http.StatusTooManyRequests {
 			logf("Skipping download fallback because the server returned HTTP 429.")
@@ -101,6 +108,9 @@ func downloadSpotifyInstaller(address, target string, expectedSize int64, method
 		advice = "The selected installer was not found. Reload the version list with Retry, or manually install that exact version."
 	case http.StatusForbidden:
 		advice = "Access to the download was denied. Try the logged URL in your browser or use another network."
+	}
+	if failure.permanent {
+		advice = "The download server is serving an installer with the wrong size. Spotify was left unchanged; try again later or contact the download catalog maintainer."
 	}
 	var dnsErr *net.DNSError
 	if errors.As(lastErr, &dnsErr) {
@@ -134,7 +144,7 @@ func attemptSpotifyDownload(address, target string, expectedSize int64, method i
 	if err := file.Close(); err != nil {
 		return err
 	}
-	if err := method.run(address, tempPath, logf); err != nil {
+	if err := method.run(address, tempPath, expectedSize, logf); err != nil {
 		return err
 	}
 	if err := validateSpotifyDownload(tempPath, expectedSize); err != nil {
@@ -171,7 +181,7 @@ func validateSpotifyDownload(filename string, expectedSize int64) error {
 	return nil
 }
 
-func downloadInstallerHTTP(client *http.Client, address, destination string, logf downloadLogger) error {
+func downloadInstallerHTTP(client *http.Client, address, destination string, expectedSize int64, logf downloadLogger) error {
 	req, err := newDownloadRequest(address)
 	if err != nil {
 		return err
@@ -184,6 +194,9 @@ func downloadInstallerHTTP(client *http.Client, address, destination string, log
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		return &installerDownloadError{status: resp.StatusCode, retryAfter: resp.Header.Get("Retry-After"), err: fmt.Errorf("server response: %s", downloadDiagnostic(string(body)))}
+	}
+	if expectedSize > 0 && resp.ContentLength > 0 && resp.ContentLength != expectedSize {
+		return &installerDownloadError{permanent: true, err: fmt.Errorf("server advertises %d bytes, catalog size %d bytes", resp.ContentLength, expectedSize)}
 	}
 	file, err := os.Create(destination)
 	if err != nil {
@@ -228,7 +241,7 @@ func (p *installerDownloadProgress) report(written int64) {
 
 type downloadCommand func(context.Context, string, ...string) *exec.Cmd
 
-func downloadInstallerCurl(command downloadCommand, curlPath, address, destination string, logf downloadLogger) error {
+func downloadInstallerCurl(command downloadCommand, curlPath, address, destination string, expectedSize int64, logf downloadLogger) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 	headerPath := destination + ".headers"
@@ -261,9 +274,6 @@ waiting:
 		}
 	}
 	status, _ := strconv.Atoi(strings.TrimSpace(stdout.String()))
-	if runErr == nil && status == http.StatusOK {
-		return nil
-	}
 	details := downloadDiagnostic(stderr.String())
 	if strings.TrimSpace(stderr.String()) == "" {
 		details = fmt.Sprintf("curl result: %v", runErr)
@@ -287,6 +297,14 @@ waiting:
 				headers.Set(strings.TrimSpace(key), strings.TrimSpace(value))
 			}
 		}
+	}
+	if status == http.StatusOK && expectedSize > 0 {
+		if contentLength, err := strconv.ParseInt(headers.Get("Content-Length"), 10, 64); err == nil && contentLength > 0 && contentLength != expectedSize {
+			return &installerDownloadError{permanent: true, err: fmt.Errorf("server advertises %d bytes, catalog size %d bytes", contentLength, expectedSize)}
+		}
+	}
+	if runErr == nil && status == http.StatusOK {
+		return nil
 	}
 	if status == http.StatusOK {
 		status = 0 // The request succeeded, but transferring its body failed.

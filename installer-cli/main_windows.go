@@ -288,6 +288,26 @@ func (i *installer) runInstall() error {
 		return fmt.Errorf("Spotify %s is required by this patch release; the selected download is not compatible", compatibility.Version)
 	}
 
+	// Fetch and validate the replacement before stopping the current Spotify
+	// process or removing a Store edition. A broken download host must leave the
+	// user's existing installation usable.
+	setupPath := ""
+	setupTempDir := ""
+	if needsInstall {
+		var err error
+		setupTempDir, err = os.MkdirTemp("", "blockthespot-spotify-setup-")
+		if err != nil {
+			return fmt.Errorf("failed to create temp directory: %w", err)
+		}
+		defer os.RemoveAll(setupTempDir)
+		setupPath = filepath.Join(setupTempDir, "SpotifyFullSetupX64.exe")
+		i.setStatus("Downloading Spotify installer")
+		i.logf("Downloading Spotify installer for %s.", selected.FullVersion)
+		if err := downloadFileWithProgress(selected.URL, setupPath, selected.Size, i.logf); err != nil {
+			return fmt.Errorf("failed to download Spotify installer: %w", err)
+		}
+	}
+
 	i.setStatus("Stopping Spotify")
 	stopSpotifyProcesses()
 	storeInstalled, err := isSpotifyStoreInstalled()
@@ -301,7 +321,7 @@ func (i *installer) runInstall() error {
 	if needsInstall {
 		i.setStatus("Installing Spotify")
 		i.setProgress(20)
-		if err := withPreservedSettings(spotifyDir, func() error { return i.installSpotify(spotifyExe, selected) }); err != nil {
+		if err := withPreservedSettings(spotifyDir, func() error { return i.installSpotify(spotifyExe, setupPath, selected.BaseVersion) }); err != nil {
 			return err
 		}
 	} else {
@@ -378,19 +398,9 @@ func (i *installer) runUninstall() error {
 	return nil
 }
 
-func (i *installer) installSpotify(spotifyExe string, selectedVersion spotifyInstallChoice) error {
-	tempDir, err := os.MkdirTemp("", "blockthespot-spotify-setup-")
-	if err != nil {
-		return fmt.Errorf("failed to create temp directory: %w", err)
-	}
-	defer os.RemoveAll(tempDir)
-	setupPath := filepath.Join(tempDir, "SpotifyFullSetupX64.exe")
-	if selectedVersion.URL == "" {
-		return errors.New("no compatible Spotify download selected")
-	}
-	i.logf("Downloading Spotify installer for %s.", selectedVersion.FullVersion)
-	if err := downloadFileWithProgress(selectedVersion.URL, setupPath, selectedVersion.Size, i.logf); err != nil {
-		return fmt.Errorf("failed to download Spotify installer: %w", err)
+func (i *installer) installSpotify(spotifyExe, setupPath, targetVersion string) error {
+	if setupPath == "" || !fileExists(setupPath) {
+		return errors.New("validated Spotify installer is missing")
 	}
 	i.setProgress(35)
 	i.logf("Running Spotify installer.")
@@ -405,7 +415,7 @@ func (i *installer) installSpotify(spotifyExe string, selectedVersion spotifyIns
 		return fmt.Errorf("failed to launch Spotify installer: %w", err)
 	}
 	i.logf("Waiting for Spotify setup to finish.")
-	if err := waitForSpotifyInstall(spotifyExe, selectedVersion.BaseVersion, 6*time.Minute); err != nil {
+	if err := waitForSpotifyInstall(spotifyExe, targetVersion, 6*time.Minute); err != nil {
 		stopSpotifyProcesses()
 		return err
 	}
@@ -449,8 +459,8 @@ func fetchSpotifyInstallChoices() (*patchRelease, []spotifyInstallChoice, int, e
 
 func downloadFileWithProgress(address, targetPath string, expectedSize int64, logf func(format string, args ...any)) error {
 	client := &http.Client{Timeout: 10 * time.Minute}
-	native := installerDownloadMethod{name: "Go HTTP", run: func(url, destination string, log downloadLogger) error {
-		return downloadInstallerHTTP(client, url, destination, log)
+	native := installerDownloadMethod{name: "Go HTTP", run: func(url, destination string, expectedSize int64, log downloadLogger) error {
+		return downloadInstallerHTTP(client, url, destination, expectedSize, log)
 	}}
 	methods := []installerDownloadMethod{native}
 	if curlPath, err := exec.LookPath("curl.exe"); err == nil {
@@ -459,8 +469,8 @@ func downloadFileWithProgress(address, targetPath string, expectedSize int64, lo
 			cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 			return cmd
 		}
-		methods = []installerDownloadMethod{{name: "curl", run: func(url, destination string, log downloadLogger) error {
-			return downloadInstallerCurl(command, curlPath, url, destination, log)
+		methods = []installerDownloadMethod{{name: "curl", run: func(url, destination string, expectedSize int64, log downloadLogger) error {
+			return downloadInstallerCurl(command, curlPath, url, destination, expectedSize, log)
 		}}, native}
 	}
 	return downloadSpotifyInstaller(address, targetPath, expectedSize, methods, logf, time.Sleep)
